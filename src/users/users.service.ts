@@ -13,19 +13,17 @@ export class UsersService {
   ) {}
 
   async create(dto: CreateUserDto) {
-    const existingUser = await this.findByUsername(dto.username);
+    const existingUser = await this.findByEmail(dto.email);
 
     if (existingUser) {
-      throw new BadRequestException(
-        `Пользователь ${dto.username} уже существует`,
-      );
+      throw new BadRequestException(`Пользователь ${dto.email} уже существует`);
     }
 
     return this.repository.save(dto);
   }
 
-  async findByUsername(username: string) {
-    return this.repository.findOneBy({ username });
+  async findByEmail(email: string) {
+    return this.repository.findOneBy({ email });
   }
 
   async findById(id: number) {
