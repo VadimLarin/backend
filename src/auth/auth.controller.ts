@@ -1,6 +1,12 @@
-import { Controller, Request, Post, UseGuards, Body } from '@nestjs/common';
+import {
+  Controller,
+  Request,
+  Post,
+  UseGuards,
+  Body,
+  BadRequestException,
+} from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
-
 import { UserEntity } from '../users/entities/user.entity';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { AuthService } from './auth.service';
@@ -19,7 +25,10 @@ export class AuthController {
   }
 
   @Post('register')
-  register(@Body() dto: CreateUserDto) {
+  async register(@Body() dto: CreateUserDto) {
+    if (!dto.email || !dto.password) {
+      throw new BadRequestException('Email и пароль обязательны');
+    }
     return this.authService.register(dto);
   }
 }
