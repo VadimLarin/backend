@@ -20,6 +20,9 @@ export class UserEntity {
   @Column()
   password: string;
 
+  @Column({ nullable: true })
+  resetPasswordToken: string;
+
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
