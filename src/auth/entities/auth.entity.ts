@@ -1,4 +1,3 @@
-import { Exclude } from 'class-transformer';
 import {
   Column,
   CreateDateColumn,
@@ -7,23 +6,16 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity('users')
-export class UserEntity {
+@Entity('resetPassword')
+export class authEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
-  name: string;
+  userId: number;
 
-  @Column({ unique: true })
-  email: string;
-
-  @Exclude()
   @Column()
-  password: string;
-
-  @Column({ type: 'int', nullable: false, default: 1 }) // 1 - ID роли "пользователь"
-  roleId: number;
+  code: string;
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;

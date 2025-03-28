@@ -5,8 +5,16 @@ import {
   UseGuards,
   Body,
   BadRequestException,
+  Get,
+  Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBody,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { UserEntity } from '../users/entities/user.entity';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { AuthService } from './auth.service';
@@ -20,7 +28,15 @@ export class AuthController {
   @Post('login')
   @UseGuards(LocalAuthGuard)
   @ApiOperation({ summary: 'Авторизация пользователя' })
-  @ApiBody({ type: CreateUserDto })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', example: 'user@mail.com' },
+        password: { type: 'string', example: '123123' },
+      },
+    },
+  })
   @ApiResponse({
     status: 200,
     description: 'Авторизация успешна, возвращает JWT токен',
@@ -45,7 +61,7 @@ export class AuthController {
     return this.authService.register(dto);
   }
 
-  @Post('forgot-password')
+  @Post('requestPasswordReset')
   @ApiOperation({ summary: 'Запрос на восстановление пароля' })
   @ApiBody({
     schema: {
@@ -61,7 +77,7 @@ export class AuthController {
     return this.authService.requestPasswordReset(body.email);
   }
 
-  @Post('reset-password')
+  @Post('resetPassword')
   @ApiOperation({ summary: 'Сброс пароля' })
   @ApiBody({
     schema: {
