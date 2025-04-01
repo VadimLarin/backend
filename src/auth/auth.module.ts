@@ -22,7 +22,9 @@ import { JwtAuthGuard } from './guards/jwt.guard';
       useFactory: async (configService: ConfigService) => {
         return {
           secret: configService.get('JWT_SECRET'),
-          signOptions: { expiresIn: configService.get('EXPIRES_IN') },
+          signOptions: {
+            expiresIn: configService.get('JWT_EXPIRES_IN'),
+          },
         };
       },
     }),

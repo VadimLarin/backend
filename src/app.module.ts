@@ -7,10 +7,12 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { ForwardTextModule } from './forward-text/forward-text.module';
 import { TermsModule } from './terms/terms.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
+      isGlobal: true,
       envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
@@ -32,6 +34,7 @@ import { TermsModule } from './terms/terms.module';
     AuthModule,
     ForwardTextModule,
     TermsModule,
+    SubscriptionsModule,
   ],
   controllers: [],
   providers: [],

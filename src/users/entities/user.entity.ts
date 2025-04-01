@@ -3,9 +3,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Subscribe } from '../../subscriptions/entities/subscribe.entity';
 
 @Entity('users')
 export class UserEntity {
@@ -22,6 +24,9 @@ export class UserEntity {
   @Column()
   password: string;
 
+  @Column({ nullable: true })
+  refreshToken: string;
+
   @Column({ type: 'int', nullable: false, default: 1 }) // 1 - ID роли "пользователь"
   roleId: number;
 
@@ -30,4 +35,7 @@ export class UserEntity {
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
+
+  @OneToMany(() => Subscribe, (subscribe) => subscribe.user)
+  subscribes: Subscribe[];
 }

@@ -7,6 +7,7 @@ import {
   BadRequestException,
   Get,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,6 +20,7 @@ import { UserEntity } from '../users/entities/user.entity';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -99,5 +101,49 @@ export class AuthController {
       body.token,
       body.newPassword,
     );
+  }
+
+  @Post('refresh')
+  @ApiOperation({ summary: 'Обновление access токена' })
+  @ApiBody({ schema: { example: { refreshToken: 'your_refresh_token' } } })
+  @ApiResponse({ status: 200, description: 'Новый access токен' })
+  @ApiResponse({
+    status: 401,
+    description: 'Неверный или просроченный refresh токен',
+  })
+  async refreshAccessToken(@Body('refreshToken') refreshToken: string) {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh токен отсутствует');
+    }
+
+    return this.authService.refreshAccessToken(refreshToken);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('revoke')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Аннулирование refresh токена' })
+  @ApiResponse({
+    status: 200,
+    description: 'Токен успешно аннулирован',
+    schema: {
+      example: {
+        message: 'Refresh токен аннулирован',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Пользователь не авторизован',
+    schema: {
+      example: {
+        statusCode: 401,
+        message: 'Unauthorized',
+      },
+    },
+  })
+  async revokeToken(@Req() req) {
+    const userId = req.user.id;
+    return await this.authService.revokeRefreshToken(userId);
   }
 }

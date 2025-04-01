@@ -30,6 +30,13 @@ export class UsersService {
     return this.repository.save(dto);
   }
 
+  async updateRefreshToken(
+    userId: number,
+    refreshToken: string,
+  ): Promise<void> {
+    await this.repository.update(userId, { refreshToken });
+  }
+
   async findByEmail(email: string) {
     return this.repository.findOneBy({ email });
   }
@@ -47,7 +54,15 @@ export class UsersService {
   async findById(id: number) {
     return this.repository.findOne({
       where: { id },
-      select: ['id', 'name', 'email', 'roleId', 'createdAt', 'updatedAt'], // Исключаем 'password'
+      select: [
+        'id',
+        'name',
+        'email',
+        'roleId',
+        'refreshToken',
+        'createdAt',
+        'updatedAt',
+      ], // Исключаем передачу 'password'
     });
   }
 
