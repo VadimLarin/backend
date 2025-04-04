@@ -47,8 +47,7 @@ export class SubscriptionsService {
     });
   }
 
-  async activatePromoSub(userId: number, code: string): Promise<Subscribe> {
-    // Проверка наличия промокода
+  async activatePromoSub(userId: number, code: string): Promise<any> {
     const promocode = await this.promocodeRepository.findOne({
       where: { code },
     });
@@ -56,23 +55,25 @@ export class SubscriptionsService {
       throw new BadRequestException('Промокод не найден или недействителен');
     }
 
-    // Проверка, что пользователь существует
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new ForbiddenException('Пользователь не найден');
     }
 
-    // Проверка на наличие активной подписки
     const activeSub = await this.subscribeRepository.findOne({
-      where: { user, isActive: true },
+      where: {
+        user: { id: userId },
+        isActive: true,
+      },
+      relations: ['user'],
     });
+
     if (activeSub) {
       throw new BadRequestException(
         'У пользователя уже есть активная подписка',
       );
     }
 
-    // Создание новой подписки
     const defaultSubType = await this.subsTypeRepository.findOne({
       where: { id: 1 },
     });
@@ -80,16 +81,28 @@ export class SubscriptionsService {
       throw new BadRequestException('Тип подписки по умолчанию не найден');
     }
 
+    const now = new Date();
+
     const subscribe = new Subscribe();
-    subscribe.type = defaultSubType; // Присваиваем тип подписки
+    subscribe.type = defaultSubType;
     subscribe.user = user;
-    subscribe.startedAt = new Date();
+    subscribe.startedAt = now;
     subscribe.expiresAt = new Date(
-      new Date().setMonth(new Date().getMonth() + promocode.duration),
-    );
+      now.getTime() + promocode.duration * 24 * 60 * 60 * 1000,
+    ); // duration в днях
     subscribe.isActive = true;
 
-    return this.subscribeRepository.save(subscribe);
+    const saved = await this.subscribeRepository.save(subscribe);
+
+    return {
+      id: saved.id,
+      type: saved.type,
+      startedAt: saved.startedAt,
+      expiresAt: saved.expiresAt,
+      isActive: saved.isActive,
+      createdAt: saved.createdAt,
+      updatedAt: saved.updatedAt,
+    };
   }
 
   async activatePaidSub(
@@ -113,19 +126,50 @@ export class SubscriptionsService {
     */
   }
 
-  async changeSub(userId: number): Promise<Subscribe> {
-    const subscription = await this.subscribeRepository.findOne({
-      where: { user: { id: userId } },
+  async changeSub(
+    adminId: number,
+    targetUserId: number,
+    months = 1,
+  ): Promise<Subscribe> {
+    const admin = await this.usersRepository.findOne({
+      where: { id: adminId },
     });
+    if (!admin || admin.roleId === 1) {
+      throw new ForbiddenException('Недостаточно прав для изменения подписки');
+    }
+
+    const subscription = await this.subscribeRepository.findOne({
+      where: { user: { id: targetUserId } },
+      relations: ['user'],
+    });
+
     if (!subscription) {
       throw new ForbiddenException('Подписка не найдена');
     }
 
+    const currentExpiration =
+      subscription.expiresAt > new Date() ? subscription.expiresAt : new Date();
+
     subscription.expiresAt = new Date(
-      new Date().setMonth(new Date().getMonth() + 1),
+      currentExpiration.setMonth(currentExpiration.getMonth() + months),
     );
+
     return this.subscribeRepository.save(subscription);
   }
+
+  /* будет отвечать за обновление подписки при оплате, возможно потребует доработки при реализации полноценного фунционала взаимодействия с платежной системой
+  async extendSubAfterPayment(userId: number, months: number = 1): Promise<Subscribe> {
+    const subscription = await this.subscribeRepository.findOne({ where: { user: { id: userId } } });
+    if (!subscription) {
+      throw new ForbiddenException('Подписка не найдена');
+    }
+  
+    const currentExpiration = subscription.expiresAt > new Date() ? subscription.expiresAt : new Date();
+    subscription.expiresAt = new Date(currentExpiration.setMonth(currentExpiration.getMonth() + months));
+  
+    return this.subscribeRepository.save(subscription);
+  }
+  */
 
   /*
   async validatePayment(paymentInfo: PaymentInfoDto): Promise<string> {
@@ -190,5 +234,63 @@ export class SubscriptionsService {
     subsType.duration = duration;
 
     return this.subsTypeRepository.save(subsType);
+  }
+
+  async deletePromocode(
+    userId: number,
+    code: string,
+  ): Promise<{ message: string }> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user || user.roleId === 1) {
+      throw new ForbiddenException('Недостаточно прав для удаления промокода');
+    }
+
+    const promo = await this.promocodeRepository.findOne({ where: { code } });
+    if (!promo) {
+      throw new BadRequestException('Промокод не найден');
+    }
+
+    await this.promocodeRepository.delete({ code });
+    return { message: 'Промокод успешно удалён' };
+  }
+
+  async deleteSubsStatus(
+    userId: number,
+    id: number,
+  ): Promise<{ message: string }> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user || user.roleId === 1) {
+      throw new ForbiddenException(
+        'Недостаточно прав для удаления статуса подписки',
+      );
+    }
+
+    const status = await this.subsStatusRepository.findOne({ where: { id } });
+    if (!status) {
+      throw new BadRequestException('Статус подписки не найден');
+    }
+
+    await this.subsStatusRepository.delete(id);
+    return { message: 'Статус подписки успешно удалён' };
+  }
+
+  async deleteSubsType(
+    userId: number,
+    id: number,
+  ): Promise<{ message: string }> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user || user.roleId === 1) {
+      throw new ForbiddenException(
+        'Недостаточно прав для удаления типа подписки',
+      );
+    }
+
+    const type = await this.subsTypeRepository.findOne({ where: { id } });
+    if (!type) {
+      throw new BadRequestException('Тип подписки не найден');
+    }
+
+    await this.subsTypeRepository.delete(id);
+    return { message: 'Тип подписки успешно удалён' };
   }
 }
