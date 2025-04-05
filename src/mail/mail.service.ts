@@ -26,4 +26,26 @@ export class MailService {
       text,
     });
   }
+
+  async sendFeedback(
+    userId: number,
+    email: string,
+    name: string,
+    message: string,
+  ) {
+    const to = this.configService.get('FEEDBACK_EMAIL');
+    const subject = 'Обратная связь от пользователя';
+    const body = `
+  🧾 Отзыв от пользователя:
+  
+  ID: ${userId}
+  Имя: ${name}
+  Email: ${email}
+  
+  💬 Сообщение:
+  ${message}
+    `;
+
+    await this.sendMail(to, subject, body);
+  }
 }

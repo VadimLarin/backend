@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { ForwardTextModule } from './forward-text/forward-text.module';
 import { TermsModule } from './terms/terms.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
     ForwardTextModule,
     TermsModule,
     SubscriptionsModule,
+    MailModule,
   ],
   controllers: [],
   providers: [],
