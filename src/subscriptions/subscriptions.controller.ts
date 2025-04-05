@@ -96,7 +96,7 @@ export class SubscriptionsController {
     );
   }
 
-  @Post('changeSub')
+  @Patch('changeSub')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
