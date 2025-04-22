@@ -6,7 +6,7 @@ import { Subscribe } from './entities/subscribe.entity';
 import { SubsTypes } from './entities/subs-type.entity';
 import { SubsStatus } from './entities/subs-status.entity';
 import { Promocode } from './entities/promocode.entity';
-import { UsersModule } from '../users/users.module'; // Импортируем UsersModule
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [

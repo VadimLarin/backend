@@ -151,7 +151,6 @@ export class UsersService {
       throw new ForbiddenException('Администратор не может удалить себя');
     }
 
-    // Удаляем пользователя
     await this.repository.remove(userToDelete);
   }
 }

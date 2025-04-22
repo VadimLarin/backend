@@ -5,7 +5,6 @@ import {
   IsString,
   IsOptional,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 import { SubsStatus } from '../entities/subs-status.entity';
 import { SubsTypes } from '../entities/subs-type.entity';
 
@@ -16,7 +15,7 @@ export class CreateSubscribeDto {
 
   @IsString()
   @IsOptional()
-  code?: string; // Добавлено поле для промокода
+  code?: string;
 
   @IsEnum(SubsTypes)
   @IsNotEmpty()

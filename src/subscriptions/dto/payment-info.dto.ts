@@ -9,6 +9,7 @@ export class PaymentInfoDto {
   @IsString()
   code: string;
 
+  //// для mvp данный функционал отключен и возможно требует доработки в будущем. Относится к интеграции платежной системы
   //@IsString()
   //@IsNotEmpty()
   //paymentMethod: string;

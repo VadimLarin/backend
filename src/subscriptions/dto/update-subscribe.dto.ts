@@ -1,4 +1,4 @@
-import { IsOptional, IsEnum, IsNotEmpty, IsNumber } from 'class-validator';
+import { IsOptional, IsEnum, IsNotEmpty } from 'class-validator';
 import { SubsStatus } from '../entities/subs-status.entity';
 import { SubsTypes } from '../entities/subs-type.entity';
 

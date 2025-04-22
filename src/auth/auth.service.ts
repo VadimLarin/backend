@@ -9,7 +9,6 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { TokenExpiredError } from 'jsonwebtoken';
 
 import { UserEntity } from '../users/entities/user.entity';
 import { CreateUserDto } from '../users/dto/create-user.dto';
@@ -121,7 +120,7 @@ export class AuthService {
       if (!user) throw new UnauthorizedException('Пользователь не найден');
 
       if (user.refreshToken === 'revoked') {
-        throw new UnauthorizedException('Refresh токен был аннулирован'); //нужно сделать нормальный вывод ошибки
+        throw new UnauthorizedException('Refresh токен был аннулирован');
       }
 
       const isMatch = await this.compareRefreshTokens(

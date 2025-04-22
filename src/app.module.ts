@@ -5,10 +5,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { getPostgresConfig } from './configs/postgres.config';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { ForwardTextModule } from './forward-text/forward-text.module';
-import { TermsModule } from './terms/terms.module';
+//import { TermsModule } from './terms/terms.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { MailModule } from './mail/mail.module';
+import { TranslateModule } from './translate/translate.module';
+import { DialogsModule } from './dialogs/dialogs.module';
 
 @Module({
   imports: [
@@ -33,10 +34,11 @@ import { MailModule } from './mail/mail.module';
     }),
     UsersModule,
     AuthModule,
-    ForwardTextModule,
-    TermsModule,
+    //TermsModule, закомментировано, так как данный функционал не требуется для mvp и требует доработки
     SubscriptionsModule,
     MailModule,
+    TranslateModule,
+    DialogsModule,
   ],
   controllers: [],
   providers: [],

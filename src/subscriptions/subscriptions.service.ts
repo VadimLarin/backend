@@ -110,7 +110,7 @@ export class SubscriptionsService {
     paymentInfo: PaymentInfoDto,
   ): Promise<Subscribe> {
     throw new NotImplementedException('Платежная система не подключена');
-    /*
+    /* закомментировано до полной интеграции с платежной системой
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new ForbiddenException('Пользователь не найден');
@@ -157,7 +157,7 @@ export class SubscriptionsService {
     return this.subscribeRepository.save(subscription);
   }
 
-  /* будет отвечать за обновление подписки при оплате, возможно потребует доработки при реализации полноценного фунционала взаимодействия с платежной системой
+  /* будет отвечать за обновление подписки при оплате, возможно потребует доработки при реализации полноценного фунционала взаимодействия с платежной системой, так как нет тестового окружения
   async extendSubAfterPayment(userId: number, months: number = 1): Promise<Subscribe> {
     const subscription = await this.subscribeRepository.findOne({ where: { user: { id: userId } } });
     if (!subscription) {

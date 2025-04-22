@@ -5,7 +5,6 @@ import {
   Body,
   Param,
   Query,
-  ForbiddenException,
   Request,
   UseGuards,
   Patch,
@@ -23,7 +22,7 @@ import { SubscriptionsService } from './subscriptions.service';
 import { CreateSubscribeDto } from './dto/create-subscribe.dto';
 import { UpdateSubscribeDto } from './dto/update-subscribe.dto';
 /*
-  // Импорт платежной информации закомментирован
+  // Импорт платежной информации, закомментировано до полной интеграции с платежной системой
   import { PaymentInfoDto } from './dto/payment-info.dto';
   */
 import { CreatePromocodeDto } from './dto/create-promocode.dto';
@@ -148,7 +147,7 @@ export class SubscriptionsController {
     return this.subscriptionsService.changeSub(adminId, targetUserId, months);
   }
 
-  /*
+  /* закомментировано до полной интеграции с платежной системой
     @Post('validatePayment')
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)

@@ -5,7 +5,6 @@ import {
   UseGuards,
   Body,
   BadRequestException,
-  Get,
   Req,
   UnauthorizedException,
 } from '@nestjs/common';

@@ -1,3 +1,4 @@
+// для mvp данный функционал отключен и требует доработки в будущем
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { DeleteResult, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';

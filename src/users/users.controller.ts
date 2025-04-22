@@ -1,15 +1,12 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
   UseGuards,
   Req,
   Query,
-  Put,
   Patch,
   Delete,
-  Param,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -19,7 +16,6 @@ import {
 } from '@nestjs/swagger';
 
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 import { UserId } from '../decorators/user-id.decorator';
@@ -29,11 +25,6 @@ import { DeleteUserDto } from './dto/delete-user.dto';
 @ApiTags('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-
-  // @Post('register')
-  // create(@Body() createUserDto: CreateUserDto) {
-  //   return this.usersService.create(createUserDto);
-  // }
 
   @Get('getMe')
   @ApiBearerAuth()
