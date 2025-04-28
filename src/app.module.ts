@@ -34,7 +34,7 @@ import { DialogsModule } from './dialogs/dialogs.module';
     }),
     UsersModule,
     AuthModule,
-    //TermsModule, закомментировано, так как данный функционал не требуется для mvp и требует доработки
+    //TermsModule, временно отключено, так как данный функционал не требуется для mvp и требует доработки
     SubscriptionsModule,
     MailModule,
     TranslateModule,

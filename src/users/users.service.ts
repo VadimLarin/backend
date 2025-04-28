@@ -3,6 +3,8 @@ import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,6 +14,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import * as bcrypt from 'bcrypt';
 import { DeleteUserDto } from './dto/delete-user.dto';
+import { SharpPipe } from './pipes/sharp.pipe';
 
 @Injectable()
 export class UsersService {
@@ -19,6 +22,8 @@ export class UsersService {
     @InjectRepository(UserEntity)
     private repository: Repository<UserEntity>,
   ) {}
+
+  private avatarRequestTimestamps: Map<number, number> = new Map();
 
   async create(dto: CreateUserDto) {
     const existingUser = await this.findByEmail(dto.email);
@@ -51,19 +56,41 @@ export class UsersService {
     throw new BadRequestException('Доступ запрещен');
   }
 
-  async findById(id: number) {
-    return this.repository.findOne({
+  async findById(id: number, withAvatar: boolean = false): Promise<UserEntity> {
+    const now = Date.now();
+
+    if (withAvatar) {
+      const lastRequest = this.avatarRequestTimestamps.get(id) || 0;
+      if (now - lastRequest < 1000) {
+        throw new HttpException(
+          'Фото можно запрашивать не чаще одного раза в секунду',
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+      this.avatarRequestTimestamps.set(id, now);
+    }
+
+    const selectFields: (keyof UserEntity)[] = [
+      'id',
+      'name',
+      'email',
+      'refreshToken',
+      'roleId',
+      'createdAt',
+      'updatedAt',
+      ...(withAvatar ? (['avatar'] as (keyof UserEntity)[]) : []),
+    ];
+
+    const user = await this.repository.findOne({
       where: { id },
-      select: [
-        'id',
-        'name',
-        'email',
-        'roleId',
-        'refreshToken',
-        'createdAt',
-        'updatedAt',
-      ], // Исключаем передачу 'password'
+      select: selectFields,
     });
+
+    if (!user) {
+      throw new NotFoundException('Пользователь не найден');
+    }
+
+    return user;
   }
 
   async updatePassword(email: string, newPassword: string) {
@@ -81,25 +108,53 @@ export class UsersService {
   async updateMe(
     userId: number,
     updateUserDto: UpdateUserDto,
+    avatarFile?: Express.Multer.File,
   ): Promise<UserEntity> {
     const user = await this.repository.findOne({ where: { id: userId } });
-
+  
     if (!user) {
       throw new ForbiddenException('Пользователь не найден');
     }
-
+  
     if (user.roleId === 1 && updateUserDto.roleId !== undefined) {
       throw new ForbiddenException('Изменение roleId запрещено для вашей роли');
     }
-
+  
+    for (const key of Object.keys(updateUserDto)) {
+      if (updateUserDto[key] === '') {
+        delete updateUserDto[key];
+      }
+    }
+  
+    const hasAvatar = avatarFile && avatarFile.buffer && avatarFile.buffer.length > 0;
+    const hasDataToUpdate = Object.keys(updateUserDto).length > 0 || hasAvatar;
+  
+    if (!hasDataToUpdate) {
+      throw new BadRequestException('Нет данных для обновления');
+    }
+  
     if (updateUserDto.password) {
       updateUserDto.password = await this.hashPassword(updateUserDto.password);
     }
-
+  
+    if (hasAvatar) {
+      const sharpPipe = new SharpPipe();
+      try {
+        const processedAvatar = await sharpPipe.transform(avatarFile);
+        user.avatar = processedAvatar;
+      } catch (error) {
+        throw new BadRequestException('Ошибка обработки изображения: ' + error.message);
+      }
+    }
+  
     Object.assign(user, updateUserDto);
-    return this.repository.save(user);
+    const updatedUser = await this.repository.save(user);
+  
+    const { password, refreshToken, avatar, ...userWithoutSensitive } = updatedUser;
+    return userWithoutSensitive as UserEntity;
   }
-
+  
+  
   private async hashPassword(password: string): Promise<string> {
     const saltOrRounds = 10;
     return await bcrypt.hash(password, saltOrRounds);
@@ -127,7 +182,6 @@ export class UsersService {
       throw new ForbiddenException('Пароль пользователя не найден');
     }
 
-    // Проверка пароля текущего пользователя
     const isPasswordValid = await bcrypt.compare(
       dto.password,
       fullCurrentUser.password,

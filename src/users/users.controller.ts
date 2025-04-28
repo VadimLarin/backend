@@ -4,16 +4,24 @@ import {
   Body,
   UseGuards,
   Req,
+  Res,
   Query,
   Patch,
   Delete,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiTags,
   ApiOperation,
   ApiResponse,
+  ApiQuery,
+  ApiConsumes,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
+
 
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -30,17 +38,33 @@ export class UsersController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'получить информацию о пользователе' })
+  @ApiQuery({ name: 'withAvatar', required: false, type: Boolean, description: 'Получить аватар' })
   @ApiResponse({ status: 200, description: 'Пользователь найден' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  findById(@UserId() id: number) {
-    return this.usersService.findById(id);
+  async findById(
+    @UserId() id: number,
+    @Res() res: Response,
+    @Query('withAvatar') withAvatar?: boolean | string,
+  ) 
+  {
+    const includeAvatar = String(withAvatar) === 'true';
+    const user = await this.usersService.findById(id, includeAvatar);
+
+    const { avatar, refreshToken, ...userWithoutSensitiveData } = user;
+
+    if (includeAvatar && avatar) {
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.send(avatar);
+    } else {
+    res.json(userWithoutSensitiveData);
+    }
   }
 
   @Get('findUserByEmail')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
-    summary: 'Найти пользователя по email(только для администратора)',
+    summary: 'Найти пользователя по email (только для администратора)',
   })
   @ApiResponse({ status: 200, description: 'Пользователь найден' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -51,16 +75,23 @@ export class UsersController {
   @Patch('updateMe')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Обновить информацию о себе' })
+  @UseInterceptors(FileInterceptor('avatar'))
+  @ApiOperation({ summary: 'Обновить информацию о себе (можно добавить аватар)' })
+  @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 200, description: 'Информация успешно обновлена' })
-  @ApiResponse({
-    status: 404,
-    description: 'Доступ запрещен или информация отсутствует',
-  })
-  async updateMe(@Req() req, @Body() updateUserDto: UpdateUserDto) {
+  @ApiResponse({ status: 404, description: 'Доступ запрещен или информация отсутствует' })
+  async updateMe(
+    @Req() req,
+    @Body() updateUserDto: UpdateUserDto,
+    @UploadedFile() avatar?: Express.Multer.File,
+  ) {
     const userId = req.user.id;
-    return this.usersService.updateMe(userId, updateUserDto);
-  }
+    const updatedUser = await this.usersService.updateMe(userId, updateUserDto, avatar);
+  
+    const { password, refreshToken, avatar: _avatar, ...safeUser } = updatedUser;
+    return safeUser;
+  }  
+  
 
   @Delete('deleteUser')
   @UseGuards(JwtAuthGuard)

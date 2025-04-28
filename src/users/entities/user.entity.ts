@@ -30,6 +30,9 @@ export class UserEntity {
   @Column({ type: 'int', nullable: false, default: 1 }) // 1 - ID роли "пользователь"
   roleId: number;
 
+  @Column({ type: 'bytea', nullable: true })
+  avatar: Buffer; // Сжатое изображение будет храниться здесь
+
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
