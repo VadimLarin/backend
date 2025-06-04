@@ -18,7 +18,7 @@ export class TranslateController {
 
   @Post('generate')
   @ApiOperation({
-    summary: 'Сгенерировать текст через YandexGPT и записать в диалог',
+    summary: 'Перевести текст через YandexGPT и записать в диалог',
   })
   @ApiOkResponse({
     description: 'Ответ от YandexGPT и ID диалога',

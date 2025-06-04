@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { firstValueFrom } from 'rxjs';
 import { Dialog } from '../dialogs/entities/dialog.entity';
 import { ConfigService } from '@nestjs/config';
+import { Subscribe } from '../subscriptions/entities/subscribe.entity';
 
 @Injectable()
 export class TranslateService {
@@ -17,6 +18,8 @@ export class TranslateService {
     private readonly httpService: HttpService,
     @InjectRepository(Dialog)
     private readonly dialogRepository: Repository<Dialog>,
+    @InjectRepository(Subscribe)
+    private readonly subscribeRepository: Repository<Subscribe>,
     private readonly configService: ConfigService,
   ) {
     this.apiUrl = this.configService.get<string>('YANDEX_MODEL_URL');
@@ -37,15 +40,18 @@ export class TranslateService {
     dialogId?: number,
     title?: string,
   ): Promise<{ response: string; dialogId: number }> {
-    const messages = [{ role: 'system', text: this.systemPrompt }];
+    await this.checkActiveSubscription(userId);
+
+    const messages = [
+      { role: 'system', text: this.systemPrompt },
+      { role: 'user', text: prompt },
+    ];
 
     if (dialogId) {
       const dialog = await this.dialogRepository.findOneBy({ id: dialogId });
       if (!dialog || (userId === 1 && dialog.userId !== userId)) {
         throw new ForbiddenException('Нет доступа к диалогу');
       }
-
-      messages.push(...dialog.dialog, { role: 'user', text: prompt });
 
       const reply = await this.sendRequestToGPT(messages);
 
@@ -55,8 +61,6 @@ export class TranslateService {
 
       return { response: reply, dialogId };
     } else {
-      messages.push({ role: 'user', text: prompt });
-
       const reply = await this.sendRequestToGPT(messages);
 
       const newDialog = this.dialogRepository.create({
@@ -87,13 +91,27 @@ export class TranslateService {
     const response = await firstValueFrom(
       this.httpService.post(this.apiUrl, body, {
         headers: {
-          Authorization: `Api-Key ${this.apiKey}`, // ключ вместо Bearer-токена
+          Authorization: `Api-Key ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
-        timeout: 10000, // 10 секунд таймаут
+        timeout: 10000,
       }),
     );
 
     return response.data.result.alternatives[0].message.text;
+  }
+
+  private async checkActiveSubscription(userId: number): Promise<void> {
+    const activeSubscription = await this.subscribeRepository.findOne({
+      where: {
+        user: { id: userId },
+        isActive: true,
+      },
+    });
+    
+    if (!activeSubscription) {
+      throw new ForbiddenException('Нет активной подписки для использования сервиса');
+    }
+    
   }
 }

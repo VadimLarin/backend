@@ -38,7 +38,7 @@ export class Subscribe {
   @Column()
   expiresAt: Date;
 
-  @Column({ default: true })
+  @Column({ default: false })
   isActive: boolean;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
