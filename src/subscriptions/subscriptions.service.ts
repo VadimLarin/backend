@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ForbiddenException,
   NotImplementedException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -41,10 +42,18 @@ export class SubscriptionsService {
     return promocode;
   }
 
-  async getInfoSub(userId: number): Promise<Subscribe> {
-    return this.subscribeRepository.findOne({
+  async getInfoSub(userId: number): Promise<any> {
+    const subscription = await this.subscribeRepository.findOne({
       where: { user: { id: userId } },
     });
+  
+    if (!subscription) {
+      return { isActive: false };
+    }
+  
+    return {
+      ...subscription
+    };
   }
 
   async activatePromoSub(userId: number, code: string): Promise<any> {
